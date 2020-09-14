@@ -8,11 +8,11 @@
             "type": "gdb",
             "request": "attach",
             "name": "Attach to gdbserver",
-            "executable": "./obj/kern/kernel",
+            "executable": "${workspaceRoot}/obj/kern/kernel",
             "target": ":26000",
             "remote": true,
             "cwd": "${workspaceRoot}",
             "valuesFormatting": "parseText"
-        }
+        },
     ]
 }
