@@ -25,6 +25,7 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int dup2(int, int);
+int alarm(int, void (*)());
 
 // ulib.c
 int stat(const char*, struct stat*);
