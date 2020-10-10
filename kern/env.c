@@ -235,6 +235,7 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	// Set the basic status variables.
 	e->env_parent_id = parent_id;
 	e->env_type = ENV_TYPE_USER;
+	e->env_priority = ENV_PRIOR_NORMAL;
 	e->env_status = ENV_RUNNABLE;
 	e->env_runs = 0;
 
@@ -504,6 +505,8 @@ env_pop_tf(struct Trapframe *tf)
 
 	asm volatile(
 		"\tmovl %0,%%esp\n"
+		// "\tfxrstor (%%esp)\n"
+		// "\taddl $524,%%esp\n"
 		"\tpopal\n"
 		"\tpopl %%es\n"
 		"\tpopl %%ds\n"
@@ -549,6 +552,7 @@ env_run(struct Env *e)
 	curenv->env_status = ENV_RUNNING;
 	curenv->env_runs++;
 	lcr3(PADDR(curenv->env_pgdir));
+	unlock_kernel();
 	env_pop_tf(&(curenv->env_tf));
 }
 

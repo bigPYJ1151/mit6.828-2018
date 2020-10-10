@@ -279,6 +279,12 @@ mem_init_mp(void)
 	//
 	// LAB 4: Your code here:
 
+	int i;
+	uintptr_t kstackbase;
+	for(i = 0; i < NCPU; ++i){
+		kstackbase = KSTACKTOP - i * (KSTKSIZE + KSTKGAP) - KSTKSIZE;
+		boot_map_region(kern_pgdir, kstackbase, KSTKSIZE, PADDR(&percpu_kstacks[i]), PTE_W);
+	}
 }
 
 // --------------------------------------------------------------
@@ -320,12 +326,13 @@ page_init(void)
 	size_t i;
 	int num_io_mem = (EXTPHYSMEM - IOPHYSMEM) / PGSIZE;
 	int num_ext_mem = ((uint32_t)boot_alloc(0) - KERNBASE) / PGSIZE;
+	int no_mpentry_mem = MPENTRY_PADDR / PGSIZE;
 
 	page_free_list = NULL;
 
 	for (i = 0; i < npages; i++) {
 
-		if((i == 0) || ((i >= npages_basemem) && (i < (npages_basemem + num_io_mem + num_ext_mem)))){
+		if((i == 0) || ((i >= npages_basemem) && (i < (npages_basemem + num_io_mem + num_ext_mem))) || i == no_mpentry_mem){
 			pages[i].pp_ref = 1;
 			pages[i].pp_link = NULL;
 			continue;
@@ -598,6 +605,7 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// value will be preserved between calls to mmio_map_region
 	// (just like nextfree in boot_alloc).
 	static uintptr_t base = MMIOBASE;
+	void* ret = (void*) base;
 
 	// Reserve size bytes of virtual memory starting at base and
 	// map physical pages [pa,pa+size) to virtual addresses
@@ -617,7 +625,14 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Hint: The staff solution uses boot_map_region.
 	//
 	// Your code here:
-	panic("mmio_map_region not implemented");
+	// panic("mmio_map_region not implemented");
+	if((base + size) > MMIOLIM)
+		panic("MMIO region overflowed!");
+
+	boot_map_region(kern_pgdir, base, size, pa, PTE_PCD | PTE_PWT | PTE_W);
+	base += ROUNDUP(size, PGSIZE);
+
+	return ret; 
 }
 
 static uintptr_t user_mem_check_addr;

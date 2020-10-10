@@ -92,6 +92,10 @@ _alltraps:
 	pushl %es 
 	pushal
 
+	// Save FPU
+	// subl $524, %esp
+	// fxsave (%esp)
+
 	movl $GD_KD, %eax
 	movl %eax, %ds 
 	movl %eax, %es 
