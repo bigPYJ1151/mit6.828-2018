@@ -33,6 +33,7 @@ pgfault(struct UTrapframe *utf)
 	// cprintf("situ1: %d\n", (err&FEC_WR));
 	// cprintf("situ2: %d\n", ((uvpd[PDX(addr)] & PTE_P)));
 	// cprintf("situ3: %d\n", (uvpt[PGNUM(addr)] & (PTE_W | PTE_COW)));
+	// cprintf("situ4: %x\n", uvpt[PGNUM(addr)] & PTE_P);
 	if((err & FEC_WR) == 0 || (uvpd[PDX(addr)] & PTE_P) == 0 || (uvpt[PGNUM(addr)] & PTE_COW) == 0)
 		panic("pgfault: fault page is invalid for COW!");
 
