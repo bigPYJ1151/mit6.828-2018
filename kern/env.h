@@ -6,6 +6,11 @@
 #include <inc/env.h>
 #include <kern/cpu.h>
 
+#define ENV_PRIOR_SUPER  0
+#define ENV_PRIOR_HIGH   1 
+#define ENV_PRIOR_NORMAL 2
+#define ENV_PRIOR_LOW    3
+
 extern struct Env *envs;		// All environments
 #define curenv (thiscpu->cpu_env)		// Current environment
 extern struct Segdesc gdt[];
