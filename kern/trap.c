@@ -224,6 +224,13 @@ trap_dispatch(struct Trapframe *tf)
 
 		// Handle keyboard and serial interrupts.
 		// LAB 5: Your code here.
+		case IRQ_OFFSET + IRQ_KBD:
+			kbd_intr();
+			break;
+
+		case IRQ_OFFSET + IRQ_SERIAL:
+			serial_intr();
+			break;
 
 		// Unexpected trap: The user process or the kernel has a bug.
 		default:

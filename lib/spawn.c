@@ -5,6 +5,9 @@
 #define UTEMP2			(UTEMP + PGSIZE)
 #define UTEMP3			(UTEMP2 + PGSIZE)
 
+extern volatile pte_t uvpt[];
+extern volatile pde_t uvpd[];
+
 // Helper functions for spawn.
 static int init_stack(envid_t child, const char **argv, uintptr_t *init_esp);
 static int map_segment(envid_t child, uintptr_t va, size_t memsz,
@@ -302,6 +305,26 @@ static int
 copy_shared_pages(envid_t child)
 {
 	// LAB 5: Your code here.
+	int r;
+	void* addr;
+	int pd_i, pt_i, pn;
+	for(pd_i = PDX(UTEXT); pd_i < PDX(UXSTACKTOP); ++pd_i){
+		if(uvpd[pd_i] & PTE_P){
+			for(pt_i = 0; pt_i < NPTENTRIES; ++pt_i){
+				pn = PGNUM(PGADDR(pd_i, pt_i, 0));
+				if(pn == PGNUM(UXSTACKTOP - PGSIZE)){
+					break;
+				}
+				if((uvpt[pn] & PTE_P) && (uvpt[pn] & PTE_SHARE)){
+					addr = (void*)((uint32_t)pn * PGSIZE);
+					if ((r = sys_page_map(thisenv->env_id, addr, child, addr, (uvpt[pn] & PTE_SYSCALL) | PTE_SHARE)) < 0)
+						return r;
+
+				}
+			}
+		}
+	}
+
 	return 0;
 }
 

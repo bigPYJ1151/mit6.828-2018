@@ -82,16 +82,24 @@ duppage(envid_t envid, unsigned pn)
 	pte_t pte = uvpt[pn];
 	int perm = PTE_P | PTE_U;
 
-	if((pte & PTE_W) || (pte & PTE_COW))
+	if (pte & PTE_SHARE){
+		if ((r = sys_page_map(thisenv->env_id, addr, envid, addr, (pte & PTE_SYSCALL) | PTE_SHARE)) < 0){
+			panic("duppage: shared page map to child failed %e", r);
+			return r;
+		}
+		return 0;	
+	}
+
+	if ((pte & PTE_W) || (pte & PTE_COW))
 		perm |= PTE_COW;
 
-	if((r = sys_page_map(thisenv->env_id, addr, envid, addr, perm)) < 0){
+	if ((r = sys_page_map(thisenv->env_id, addr, envid, addr, perm)) < 0){
 		panic("duppage: page map to child failed %e", r);
 		return r;
 	}
 
-	if(perm & PTE_COW){
-		if((r = sys_page_map(thisenv->env_id, addr, thisenv->env_id, addr, perm)) < 0)
+	if (perm & PTE_COW){
+		if ((r = sys_page_map(thisenv->env_id, addr, thisenv->env_id, addr, perm)) < 0)
 			panic("duppage: page map to parent failed %e", r);
 			return r;
 	}
