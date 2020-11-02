@@ -1,6 +1,7 @@
 #include "ns.h"
 
 extern union Nsipc nsipcbuf;
+static struct jif_pkt *pkt = (struct jif_pkt*)REQVA;
 
 void
 input(envid_t ns_envid)
@@ -13,4 +14,24 @@ input(envid_t ns_envid)
 	// Hint: When you IPC a page to the network server, it will be
 	// reading from it for a while, so don't immediately receive
 	// another packet in to the same physical page.
+	int i, r;
+	int32_t length;
+	struct jif_pkt *cpkt = pkt;
+
+	for (i = 0; i < 10; ++i){
+		if ((r = sys_page_alloc(0, (void*)((uintptr_t)pkt + i * PGSIZE), PTE_W)) < 0)
+			panic("net input: sys_page_alloc failed %e", r);
+	}
+
+	i = 0;
+	while (1){
+		while ((length = sys_netpacket_try_receive((void*)((uintptr_t)cpkt + sizeof(cpkt->jp_len)), PGSIZE - sizeof(cpkt->jp_len))) < 0)
+			sys_yield();
+
+		cpkt->jp_len = length;
+		ipc_send(ns_envid, NSREQ_INPUT, cpkt, PTE_P | PTE_U);
+		i = (i + 1) % 10;
+		cpkt = (struct jif_pkt*)((uintptr_t)pkt + i * PGSIZE);
+		sys_yield();
+	}
 }

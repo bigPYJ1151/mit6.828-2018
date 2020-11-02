@@ -12,6 +12,7 @@
 #include <kern/console.h>
 #include <kern/sched.h>
 #include <kern/time.h>
+#include <kern/e1000.h>
 
 // Print a string to the system console.
 // The string is exactly 'len' characters long.
@@ -408,7 +409,8 @@ static int
 sys_time_msec(void)
 {
 	// LAB 6: Your code here.
-	panic("sys_time_msec not implemented");
+	// panic("sys_time_msec not implemented");
+	return time_msec();
 }
 
 // Set priority of current environment.
@@ -421,7 +423,21 @@ sys_env_set_priority(envid_t envid, int priority){
 	
 	env->env_priority = priority;
 	return 0;
-} 
+}
+
+static int 
+sys_netpacket_try_send(void *addr, size_t len){
+	user_mem_assert(curenv, addr, len, PTE_U);
+	
+	return e1000_transmit(addr, len);	
+}
+
+static int
+sys_netpacket_try_receive(void *addr, size_t len){
+	user_mem_assert(curenv, addr, len, PTE_U | PTE_W);
+
+	return e1000_receive(addr, len);
+}
 
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
@@ -494,6 +510,17 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 
 		case SYS_env_set_trapframe:
 			ret = sys_env_set_trapframe(a1, (struct Trapframe*)a2);
+			return ret;
+
+		case SYS_time_msec:
+			ret = sys_time_msec();
+			return ret;
+
+		case SYS_netpacket_try_send:
+			ret = sys_netpacket_try_send((void*)a1, a2);
+			return ret;
+		case SYS_netpacket_try_receive:
+			ret = sys_netpacket_try_receive((void*)a1, a2);
 			return ret;
 
 		default:
